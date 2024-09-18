@@ -12,6 +12,7 @@ import jsPDF from 'jspdf';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import ArrowForwardIosSharpIcon from '@mui/icons-material/ArrowForwardIosSharp';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import autoTable from 'jspdf-autotable';
 
 
 const steps = ['Basic Details', 'Personal Details', 'Education Details'];  //Stepper Form Steps UI Show 
@@ -39,7 +40,7 @@ function StepperForm() {
     });
 
     const [activeStep, setActiveStep] = React.useState(0);
-    const [completed, setCompleted] = React.useState({});
+    const [completed,] = React.useState({});
 
 
 
@@ -128,21 +129,19 @@ function StepperForm() {
     function handleGenerate(e) {
         e.preventDefault();
 
+        //First-form fill up to Generate pdf Start*//
         // Regex for letters only (no numbers or special characters)
         const firstNameValidation = /^[A-Za-z]+$/;
         const lastNameValidation = /^[A-Za-z]+$/;
         // Basic email validation regex
         const emailValidation = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-
         const newErrors = {
             firstName: !firstName ? 'Required' : !firstNameValidation.test(firstName) ? 'Must contain only letters' : '',
             lastName: !lastName ? 'Required' : !lastNameValidation.test(lastName) ? 'Must contain only letters' : '',
             email: !email ? 'Required' : !emailValidation.test(email) ? 'Invalid email format' : '',
         };
-
         setErrors(newErrors);
-
         // Check if there are any errors
         const hasErrors = Object.values(newErrors).some(error => error !== '');
 
@@ -151,6 +150,8 @@ function StepperForm() {
             console.log('Validation errors:', newErrors);
             return;
         }
+        // End *//
+
 
         //Create a new jsPDF
         const doc = new jsPDF();
@@ -158,9 +159,14 @@ function StepperForm() {
         // Title
         doc.setFontSize(22);
         doc.setTextColor(40);
-        doc.text('RESUME BUILDER', 10, 20);
+        doc.text(`Resume ${firstName}`, 10, 20);
         doc.setFontSize(12);
         doc.setTextColor(50);
+        // const title = "DEMO DEMO"
+        // const margin = 10
+        // const titleWidth = doc.getTextWidth(title)
+        // const center = (doc.internal.pageSize.width / 2) - (titleWidth / 2)
+        // doc.text(title,center,margin)
 
         // Add Basic Details if filled
         doc.setFontSize(16);
@@ -190,24 +196,22 @@ function StepperForm() {
             doc.addImage(photo, 'JPEG', 150, 10, 50, 60);
         }
 
-        // Set initial Y position for education details
-        let yPosition = 130;
-        doc.setFontSize(16);
-        doc.text('Education', 10, yPosition);
-        yPosition += 10;
-
-        inputs.forEach((item, index) => {
-            if (item.education || item.percentage || item.year) {
-                doc.setFontSize(12);
-                doc.text(`Education ${index + 1}: ${item.education || 'N/A'}`, 10, yPosition);
-                doc.text(`Percentage ${index + 1}: ${item.percentage || 'N/A'}`, 10, yPosition + 10);
-                doc.text(`Passing Year ${index + 1}: ${item.year || 'N/A'}`, 10, yPosition + 20);
-                yPosition += 30; // Adjust spacing as needed
+        //Add Education Details Table
+        const pageHeight = doc.internal.pageSize.height; // Get the page height
+        const startY = pageHeight * 0.4;
+        doc.autoTable({
+            head: [["Education", "Passing Year", "Percentage"]],
+            body: inputs.map((item) => [item.education, item.year, item.percentage]),
+            startY: startY,
+            headStyles: {
+                fillColor: 'red',
+                textColor: 'white',
+                width: '20'
             }
-        });
+        })
 
         // Save the PDF
-        doc.save('Resume.pdf');
+        doc.save(`Resume_${firstName}.pdf`);
     }
 
     return (
@@ -281,4 +285,3 @@ function StepperForm() {
 }
 
 export default StepperForm
-
